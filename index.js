@@ -475,7 +475,7 @@
         }
         return reels;
     };
-    var reels = Reel.init([19, 13, 7]);
+    var reels = Reel.init([7, 5, 3]);
 
     function Line(xy) {
         this.xy = xy;
@@ -544,6 +544,22 @@
         new Line([2, 2, 2])
     ];
 
+    function coinFx(fb, tile, x, y, ts) {
+        var fn = function(dt) {
+            var dx = ((fb.cv.width - tile.w) >> 1) + x * dt;
+            var dy = fb.cv.height - (tile.h << 1) + y * dt + 0.001 * dt * dt;
+            fb.cx.drawImage(
+                sprite.sheet.main.img,
+                tile.x, tile.y, tile.w, tile.h,
+                dx, dy, tile.w, tile.h
+            );
+        };
+        q.add(fn, ts, 1000);
+    }
+    coinFx.tile = [sprite.sheet.main.tile.coin, sprite.sheet.main.tile.star];
+    coinFx.x = [-0.2, -0.1, 0, 0.1, 0.2];
+    coinFx.y = [-0.8, -0.9, -1, -1.1];
+
     function mainScn() {
         scn.fb2.clr();
         if (0 === mainScn.st) {
@@ -562,8 +578,22 @@
                 }
             }
             if (0 === st) {
+                var pts = 0;
                 for (i = 0; i < lines.length; i++) {
-                    lines[i].upd();
+                    pts += lines[i].upd() ? 1 : 0;
+                }
+                var ts = 0;
+                for (i = 0; i < pts; i++) {
+                    for (var j = 0; j < 8; j++) {
+                        coinFx(
+                            scn.fb2,
+                            coinFx.tile[prng(coinFx.tile.length)],
+                            coinFx.x[prng(coinFx.x.length)],
+                            coinFx.y[prng(coinFx.y.length)],
+                            ts
+                        );
+                        ts += 50;
+                    }
                 }
                 mainScn.st = st;
             }
