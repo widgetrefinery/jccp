@@ -307,12 +307,16 @@
             raw: undefined
         },
         kb: {
+            space: 32,
             0: 48,
             1: 49,
             2: 50,
             9: 57
         },
         _kb: function(e) {
+            if (io.kb.space === e.which) {
+                io.st.spin = true;
+            }
             io.st.raw = e.which;
             db.log('kb=' + e.which);
         },
@@ -365,8 +369,112 @@
         fadeAnim._r = Math.sqrt(fadeAnim._x * fadeAnim._x + fadeAnim._y * fadeAnim._y);
     };
 
+    function Sym() {
+        var i = prng(7);
+        this.tile = sprite.sheet.main.tile['sym' + i];
+    }
+    Sym.prototype.draw = function(cx, x, y, w, h, dy) {
+        if (dy === -this.tile.h || dy === h) {
+            return;
+        }
+        if (0 > dy) {
+            cx.drawImage(
+                sprite.sheet.main.img,
+                this.tile.x, this.tile.y - dy, this.tile.w, this.tile.h + dy,
+                x, y, this.tile.w, this.tile.h + dy
+            );
+        } else if (h - this.tile.h < dy) {
+            dy -= h - this.tile.h;
+            cx.drawImage(
+                sprite.sheet.main.img,
+                this.tile.x, this.tile.y, this.tile.w, this.tile.h - dy,
+                x, y + h - this.tile.h + dy, this.tile.w, this.tile.h - dy
+            );
+        } else {
+            cx.drawImage(
+                sprite.sheet.main.img,
+                this.tile.x, this.tile.y, this.tile.w, this.tile.h,
+                x, y + dy, this.tile.w, this.tile.h
+            );
+        }
+    }
+
+    function Reel(x, y) {
+        this.x = x;
+        this.y = y;
+        this.r = 3;
+        this.syms = [];
+        for (var i = 0; i < 8; i++) {
+            this.syms.push(new Sym());
+        }
+        this.pos = 0;
+        this.st = undefined;
+    }
+    Reel.prototype.draw = function(cx) {
+        var pos = Math.floor(this.pos);
+        var y = pos - this.pos;
+        for (var i = 0; i <= this.r; i++) {
+            var sym = this.syms[(pos + i + this.syms.length) % this.syms.length];
+            var dy = ((y + i) * sym.tile.h) | 0;
+            sym.draw(cx, this.x, this.y, sym.tile.w, sym.tile.h * this.r, dy);
+        }
+    };
+    Reel.prototype.add2Q = function(fb, ts, td) {
+        var self = this;
+        q.add(function(dt) {
+            self.draw(fb.cx);
+        }, ts, td);
+    };
+    Reel.prototype.spin = function(dt) {
+        var s = 0.02;
+        if (2000 <= dt) {
+            if (undefined !== this.st) {
+                this.pos = Math.round(this.st - s * 1500) | 0;
+                this.st = undefined;
+            }
+        } else if (1500 <= dt) {
+            dt = 2000 - dt;
+            this.pos = this.st - s * 1500 + s / 500 / 2 * dt * dt;
+        } else if (500 <= dt) {
+            this.pos = this.st - s * 500 / 2 - s * (dt - 500);
+        } else {
+            this.pos = this.st - s / 500 / 2 * dt * dt;
+        }
+        while (this.pos <= -this.syms.length) {
+            this.pos += this.syms.length << 1;
+        }
+    };
+    Reel.prototype.qSpin = function(ts) {
+        if (undefined !== this.st) {
+            return;
+        }
+        this.st = this.pos;
+        var self = this;
+        q.add(function(dt){
+            self.spin(dt);
+        }, ts, 2000);
+    };
+    var reels = [new Reel(92, 46), new Reel(184, 46), new Reel(276, 46)];
+
     function mainScn() {
         scn.fb2.clr();
+        if (0 === mainScn.st) {
+            if (io.st.spin) {
+                mainScn.st = 1;
+                for (var i = 0; i < reels.length; i++) {
+                    reels[i].qSpin(250 * i);
+                }
+            }
+        } else {
+            var st = 0;
+            for (var i = 0; i < reels.length; i++) {
+                if (undefined !== reels[i].st) {
+                    st = 1;
+                    break;
+                }
+            }
+            mainScn.st = st;
+        }
     }
     mainScn.rst = function() {
         q.rst();
@@ -378,6 +486,10 @@
         );
         fadeAnim.rst(scn.fb2, true, false);
         q.add(fadeAnim, 0, 1000);
+        for (var i = 0; i < reels.length; i++) {
+            reels[i].add2Q(scn.fb2, 0, 0);
+        }
+        mainScn.st = 0;
     };
 
     window.document.addEventListener('DOMContentLoaded', function() {
