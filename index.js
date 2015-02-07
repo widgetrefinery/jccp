@@ -546,7 +546,7 @@
 
     function coinFx(fb, tile, x, y, ts) {
         var fn = function(dt) {
-            var dx = ((fb.cv.width - tile.w) >> 1) + x * dt;
+            var dx = reels[reels.length >> 1].x + x * dt;
             var dy = fb.cv.height - (tile.h << 1) + y * dt + 0.001 * dt * dt;
             fb.cx.drawImage(
                 sprite.sheet.main.img,
