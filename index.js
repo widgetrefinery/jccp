@@ -320,12 +320,18 @@
             io.st.raw = e.which;
             db.log('kb=' + e.which);
         },
+        _ms: function(e){
+            if (0 === e.button) {
+                io.st.spin = true;
+            }
+        },
         rst: function() {
             io.st.spin = false;
             io.st.raw = undefined;
         }
     };
     window.document.addEventListener('keydown', io._kb);
+    window.document.addEventListener('click', io._ms);
 
     function scn() {
         if (!scn.run) {
