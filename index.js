@@ -375,9 +375,8 @@
         fadeAnim._r = Math.sqrt(fadeAnim._x * fadeAnim._x + fadeAnim._y * fadeAnim._y);
     };
 
-    function Sym() {
-        var i = prng(7);
-        this.tile = sprite.sheet.main.tile['sym' + i];
+    function Sym(name) {
+        this.tile = sprite.sheet.main.tile[name];
     }
     Sym.prototype.draw = function(cx, x, y, w, h, dy) {
         if (dy === -this.tile.h || dy === h) {
@@ -405,13 +404,13 @@
         }
     }
 
-    function Reel(x, y) {
+    function Reel(x, y, s) {
         this.x = x;
         this.y = y;
         this.r = 3;
         this.syms = [];
-        for (var i = 0; i < 8; i++) {
-            this.syms.push(new Sym());
+        for (var i = 0; i < s.length; i++) {
+            this.syms.push(new Sym('sym' + s[i]));
         }
         this.pos = 0;
         this.st = undefined;
@@ -446,8 +445,8 @@
         } else {
             this.pos = this.st - s / 500 / 2 * dt * dt;
         }
-        while (this.pos <= -this.syms.length) {
-            this.pos += this.syms.length << 1;
+        while (this.pos < 0) {
+            this.pos += this.syms.length;
         }
     };
     Reel.prototype.qSpin = function(ts) {
@@ -460,7 +459,90 @@
             self.spin(dt);
         }, ts, 2000);
     };
-    var reels = [new Reel(92, 46), new Reel(184, 46), new Reel(276, 46)];
+    Reel.prototype.getSym = function(i) {
+        return this.syms[(this.pos + i) % this.syms.length].tile;
+    };
+    Reel.init = function(size) {
+        var syms = [0, 1, 2, 3, 4, 5, 6];
+        var reels = [];
+        for (var i = 0; i < size.length; i++) {
+            var x = [];
+            for (var j = 0; j < size[i]; j++) {
+                x.push(syms[prng(syms.length)]);
+            }
+            reels.push(new Reel(92 + 92 * i, 46, x));
+            syms = x;
+        }
+        return reels;
+    };
+    var reels = Reel.init([19, 13, 7]);
+
+    function Line(xy) {
+        this.xy = xy;
+    }
+    Line.prototype.upd = function() {
+        var sym = reels[0].getSym(this.xy[0]);
+        for (var i = 1; i < this.xy.length; i++) {
+            if (sym !== reels[i].getSym(this.xy[i])) {
+                sym = undefined;
+                break;
+            }
+        }
+        var result = undefined !== sym;
+        if (result) {
+            this.qDraw();
+        }
+        return result;
+    };
+    Line.prototype.draw = function(dt) {
+        if (((dt / 10) | 0) % 2) {
+            return;
+        }
+        var cx = scn.fb2.cx;
+        var tile = sprite.sheet.main.tile.sym0;
+        var w2 = tile.w >> 1;
+        var h2 = tile.h >> 1;
+        cx.save();
+        cx.strokeStyle = '#f8f800';
+        cx.lineWidth = 8;
+        cx.beginPath();
+        cx.moveTo(reels[0].x, (reels[0].y + this.xy[0] * tile.h + h2) | 0);
+        cx.lineTo(reels[0].x + w2, (reels[0].y + this.xy[0] * tile.h + h2) | 0);
+        for (var i = 1; i < this.xy.length; i++) {
+            cx.lineTo(reels[i].x + w2, (reels[i].y + this.xy[i] * tile.h + h2) | 0);
+        }
+        cx.lineTo(
+            reels[this.xy.length - 1].x + tile.w,
+            (reels[this.xy.length - 1].y + this.xy[this.xy.length - 1] * tile.h + h2) | 0
+        );
+        cx.stroke();
+        cx.restore();
+    };
+    Line.prototype.qDraw = function() {
+        var self = this;
+        q.add(function(dt){
+            self.draw(dt);
+        }, 0, 1750);
+    };
+    var lines = [
+        new Line([0, 0, 0]),
+        new Line([0, 0, 1]),
+        new Line([0, 1, 0]),
+        new Line([0, 1, 1]),
+        new Line([0, 1, 2]),
+        new Line([1, 0, 0]),
+        new Line([1, 0, 1]),
+        new Line([1, 1, 0]),
+        new Line([1, 1, 1]),
+        new Line([1, 1, 2]),
+        new Line([1, 2, 1]),
+        new Line([1, 2, 2]),
+        new Line([2, 1, 0]),
+        new Line([2, 1, 1]),
+        new Line([2, 1, 2]),
+        new Line([2, 2, 1]),
+        new Line([2, 2, 2])
+    ];
 
     function mainScn() {
         scn.fb2.clr();
@@ -479,7 +561,12 @@
                     break;
                 }
             }
-            mainScn.st = st;
+            if (0 === st) {
+                for (i = 0; i < lines.length; i++) {
+                    lines[i].upd();
+                }
+                mainScn.st = st;
+            }
         }
     }
     mainScn.rst = function() {
