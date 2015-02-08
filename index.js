@@ -56,8 +56,15 @@
                 scn.fb1.cv.style.display = 'none' === scn.fb1.cv.style.display ? 'block' : 'none';
             } else if (io.kb[2] === io.st.raw) {
                 scn.fb2.cv.style.display = 'none' === scn.fb2.cv.style.display ? 'block' : 'none';
+            } else if (io.kb[0] === io.st.raw || io.kb[9] === io.st.raw) {
+                db._con = 1 - db._con;
             }
-        }
+            if (1 === db._con) {
+                var fps = (1000 / tick.dt) | 0;
+                sprite.txtL(scn.fb2.cx, 0, 0, "" + fps);
+            }
+        },
+        _con: 0
     };
 
     var lang = {
