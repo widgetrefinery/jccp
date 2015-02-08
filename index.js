@@ -535,6 +535,7 @@
 
     function Reel(x, y, s) {
         this.x = x;
+        this.y0 = y;
         this.y = y;
         this.r = 3;
         this.syms = [];
@@ -553,11 +554,23 @@
             sym.draw(cx, this.x, this.y, sym.tile.w, sym.tile.h * this.r, dy);
         }
     };
-    Reel.prototype.add2Q = function(fb, ts, td) {
+    Reel.prototype.qDraw = function(fb, ts, td) {
         var self = this;
         q.add(function(dt) {
             self.draw(fb.cx);
         }, ts, td);
+    };
+    Reel.prototype.fadeIn = function(pct) {
+        var sh = sprite.sheet.main.tile.sym0.h;
+        this.y = ((this.y0 + this.r * sh) * pct - this.r * sh) | 0;
+    };
+    Reel.prototype.qFadeIn = function(ts, td) {
+        var self = this;
+        self.fadeIn(0);
+        var fn = function(dt) {
+            self.fadeIn(dt / td);
+        };
+        q.add(fn, ts, td);
     };
     Reel.prototype.spin = function(dt) {
         var s = 0.018;
@@ -697,22 +710,22 @@
 
     function mainScn() {
         scn.fb2.clr();
-        if (0 === mainScn.st) {
+        if (1 === mainScn.st) {
             if (io.st.spin) {
-                mainScn.st = 1;
+                mainScn.st = 2;
                 for (var i = 0; i < reels.length; i++) {
                     reels[i].qSpin(250 * i);
                 }
             }
-        } else {
-            var st = 0;
+        } else if (2 === mainScn.st) {
+            var st = 1;
             for (var i = 0; i < reels.length; i++) {
                 if (undefined !== reels[i].st) {
-                    st = 1;
+                    st = 2;
                     break;
                 }
             }
-            if (0 === st) {
+            if (1 === st) {
                 var pts = 0;
                 for (i = 0; i < lines.length; i++) {
                     pts += lines[i].upd() ? 1 : 0;
@@ -743,14 +756,18 @@
             0, 0, scn.fb1.cv.width, scn.fb1.cv.height
         );
         q.add(function(dt) {
-            var len = (lang.start.length * dt / 500) | 0;
+            var len = (lang.start.length * dt / 400) | 0;
             sprite.txtL(scn.fb1.cx, 24, 425, lang.start.substr(0, len));
-        }, 1000, 500);
+            if (lang.start.length <= len + 1) {
+                mainScn.st = 1;
+            }
+        }, 1000, 400);
+        for (var i = 0; i < reels.length; i++) {
+            reels[i].qFadeIn(200 + 200 * i, 400);
+            reels[i].qDraw(scn.fb2, 0, 0);
+        }
         fadeAnim.rst(scn.fb2, true, false);
         q.add(fadeAnim, 0, 1000);
-        for (var i = 0; i < reels.length; i++) {
-            reels[i].add2Q(scn.fb2, 0, 0);
-        }
         mainScn.st = 0;
     };
 
