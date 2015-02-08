@@ -699,7 +699,7 @@
             fb.cx.drawImage(
                 sprite.sheet.main.img,
                 tile.x, tile.y, tile.w, tile.h,
-                dx, dy, tile.w, tile.h
+                dx | 0, dy | 0, tile.w, tile.h
             );
         };
         q.add(fn, ts, 1000);
