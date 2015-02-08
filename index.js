@@ -88,11 +88,13 @@
                     console.log(err);
                     throw new Exception(err);
                 }
-                cx.drawImage(
-                    sprite.sheet.txt.img,
-                    tile.x, tile.y, tile.w, tile.h,
-                    x + tile.dx, y + tile.dy, tile.w, tile.h
-                );
+                if (0 < tile.w && 0 < tile.h) {
+                    cx.drawImage(
+                        sprite.sheet.txt.img,
+                        tile.x, tile.y, tile.w, tile.h,
+                        x + tile.dx, y + tile.dy, tile.w, tile.h
+                    );
+                }
                 x += tile.dw;
             }
         },
