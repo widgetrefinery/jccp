@@ -111,12 +111,12 @@
                     star: {x:  92, y: 184, w:  92, h:  92},
                     coin: {x: 184, y: 184, w:  92, h:  92},
                     body: {x:   0, y: 321, w: 196, h: 191},
-                    lids: {x:  48, y: 296, w: 100, h:  18},
-                    m1:   {x: 196, y: 425, w:  59, h:  29},
-                    m2:   {x: 196, y: 390, w:  67, h:  35},
-                    armL: {x: 196, y: 454, w:  19, h:  42},
-                    armR: {x: 215, y: 454, w:  19, h:  43},
-                    neck: {x: 234, y: 454, w:  27, h:  38},
+                    lids: {x:  48, y: 296, w: 100, h:  18, dx:  48, dy:  44},
+                    m1:   {x: 196, y: 425, w:  59, h:  29, dx:  70, dy:  76},
+                    m2:   {x: 196, y: 390, w:  67, h:  35, dx:  66, dy:  73},
+                    armL: {x: 196, y: 454, w:  19, h:  42, dx:  72, dy: 133},
+                    armR: {x: 215, y: 454, w:  19, h:  43, dx: 109, dy: 133},
+                    neck: {x: 234, y: 454, w:  27, h:  38, dx:  86, dy: 121},
                 },
                 init: function() {
                     var sheet = sprite.sheet.main;
@@ -708,6 +708,73 @@
     coinFx.x = [-0.2, -0.1, 0, 0.1, 0.2];
     coinFx.y = [-0.3, -0.4, -0.5];
 
+    function ccp() {
+        var sheet = sprite.sheet.main;
+        var tile = sheet.tile.body;
+        ccp._fb.cx.save();
+        ccp._fb.cx.translate(ccp.x, ccp.y);
+        ccp._fb.cx.drawImage(
+            sheet.img,
+            tile.x, tile.y, tile.w, tile.h,
+            0, 0, tile.w, tile.h
+        );
+        tile = sheet.tile.armL;
+        ccp._fb.cx.drawImage(
+            sheet.img,
+            tile.x, tile.y, tile.w, tile.h,
+            tile.dx, tile.dy, tile.w, tile.h
+        );
+        tile = sheet.tile.armR;
+        ccp._fb.cx.drawImage(
+            sheet.img,
+            tile.x, tile.y, tile.w, tile.h,
+            tile.dx, tile.dy, tile.w, tile.h
+        );
+        tile = sheet.tile.neck;
+        ccp._fb.cx.drawImage(
+            sheet.img,
+            tile.x, tile.y, tile.w, tile.h,
+            tile.dx, tile.dy, tile.w, tile.h
+        );
+        if (0 === ccp._st) {
+            tile = sheet.tile.lids;
+            ccp._fb.cx.drawImage(
+                sheet.img,
+                tile.x, tile.y, tile.w, tile.h,
+                tile.dx, tile.dy, tile.w, tile.h
+            );
+        } else if (1 === ccp._st) {
+            tile = sheet.tile.m1;
+            ccp._fb.cx.drawImage(
+                sheet.img,
+                tile.x, tile.y, tile.w, tile.h,
+                tile.dx, tile.dy, tile.w, tile.h
+            );
+        } else if (2 === ccp._st) {
+            tile = sheet.tile.m2;
+            ccp._fb.cx.drawImage(
+                sheet.img,
+                tile.x, tile.y, tile.w, tile.h,
+                tile.dx, tile.dy, tile.w, tile.h
+            );
+        }
+        ccp._fb.cx.restore();
+        if (0 !== ccp._st && tick.ts - ccp._ts > 1000) {
+            ccp._st = 0;
+        }
+    }
+    ccp.st = function(st) {
+        ccp._st = st;
+        ccp._ts = tick.ts;
+    };
+    ccp.rst = function(fb, x, y) {
+        ccp._fb = fb;
+        ccp.x = x;
+        ccp.y = y;
+        ccp._st = 0;
+        ccp._ts = 0;
+    };
+
     function mainScn() {
         scn.fb2.clr();
         if (1 === mainScn.st) {
@@ -729,6 +796,11 @@
                 var pts = 0;
                 for (i = 0; i < lines.length; i++) {
                     pts += lines[i].upd() ? 1 : 0;
+                }
+                if (0 < pts) {
+                    ccp.st(2);
+                } else {
+                    ccp.st(1);
                 }
                 var ts = 0;
                 for (i = 0; i < pts; i++) {
@@ -766,6 +838,8 @@
             reels[i].qFadeIn(200 + 200 * i, 400);
             reels[i].qDraw(scn.fb2, 0, 0);
         }
+        ccp.rst(scn.fb2, scn.fb2.cv.width - sprite.sheet.main.tile.body.w, scn.fb2.cv.height - sprite.sheet.main.tile.body.h);
+        q.add(ccp, 0, 0);
         fadeAnim.rst(scn.fb2, true, false);
         q.add(fadeAnim, 0, 1000);
         mainScn.st = 0;
