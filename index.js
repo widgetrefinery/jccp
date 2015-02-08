@@ -767,12 +767,17 @@
         ccp._st = st;
         ccp._ts = tick.ts;
     };
-    ccp.rst = function(fb, x, y) {
+    ccp.rst = function(fb, x, y, ts, td) {
         ccp._fb = fb;
-        ccp.x = x;
+        ccp.x0 = -sprite.sheet.main.tile.body.w;
+        ccp.x1 = x;
+        ccp.x = ccp.x0;
         ccp.y = y;
         ccp._st = 0;
         ccp._ts = 0;
+        q.add(function(dt) {
+            ccp.x = ccp.x0 + ((ccp.x1 - ccp.x0) * dt / td) | 0;
+        }, ts, td);
     };
 
     function mainScn() {
@@ -838,7 +843,13 @@
             reels[i].qFadeIn(200 + 200 * i, 400);
             reels[i].qDraw(scn.fb2, 0, 0);
         }
-        ccp.rst(scn.fb2, scn.fb2.cv.width - sprite.sheet.main.tile.body.w, scn.fb2.cv.height - sprite.sheet.main.tile.body.h);
+        ccp.rst(
+            scn.fb2,
+            scn.fb2.cv.width - sprite.sheet.main.tile.body.w,
+            scn.fb2.cv.height - sprite.sheet.main.tile.body.h,
+            400,
+            400
+        );
         q.add(ccp, 0, 0);
         fadeAnim.rst(scn.fb2, true, false);
         q.add(fadeAnim, 0, 1000);
