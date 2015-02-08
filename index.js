@@ -377,31 +377,49 @@
 
     function Sym(name) {
         this.tile = sprite.sheet.main.tile[name];
+        this.flip = undefined;
     }
     Sym.prototype.draw = function(cx, x, y, w, h, dy) {
         if (dy === -this.tile.h || dy === h) {
             return;
         }
+        var w2 = this.tile.w >> 1;
+        cx.save();
+        cx.translate(x + w2, 0);
+        if (undefined !== this.flip) {
+            var dt = tick.ts - this.flip;
+            if (1200 < dt) {
+                this.flip = undefined;
+                dt = 0;
+            }
+            dt = dt % 600;
+            if (200 > dt) {
+                cx.scale(1 - 2 * dt / 200, 1);
+            } else if (400 > dt) {
+                cx.scale(2 * (dt - 200) / 200 - 1, 1);
+            }
+        }
         if (0 > dy) {
             cx.drawImage(
                 sprite.sheet.main.img,
                 this.tile.x, this.tile.y - dy, this.tile.w, this.tile.h + dy,
-                x, y, this.tile.w, this.tile.h + dy
+                -w2, y, this.tile.w, this.tile.h + dy
             );
         } else if (h - this.tile.h < dy) {
             dy -= h - this.tile.h;
             cx.drawImage(
                 sprite.sheet.main.img,
                 this.tile.x, this.tile.y, this.tile.w, this.tile.h - dy,
-                x, y + h - this.tile.h + dy, this.tile.w, this.tile.h - dy
+                -w2, y + h - this.tile.h + dy, this.tile.w, this.tile.h - dy
             );
         } else {
             cx.drawImage(
                 sprite.sheet.main.img,
                 this.tile.x, this.tile.y, this.tile.w, this.tile.h,
-                x, y + dy, this.tile.w, this.tile.h
+                -w2, y + dy, this.tile.w, this.tile.h
             );
         }
+        cx.restore();
     }
 
     function Reel(x, y, s) {
@@ -454,13 +472,16 @@
             return;
         }
         this.st = this.pos;
+        for (var i = 0; i < this.syms.length; i++) {
+            this.syms[i].flip = undefined;
+        }
         var self = this;
         q.add(function(dt){
             self.spin(dt);
         }, ts, 2000);
     };
     Reel.prototype.getSym = function(i) {
-        return this.syms[(this.pos + i) % this.syms.length].tile;
+        return this.syms[(this.pos + i) % this.syms.length];
     };
     Reel.init = function(size) {
         var syms = [0, 1, 2, 3, 4, 5, 6];
@@ -481,15 +502,18 @@
         this.xy = xy;
     }
     Line.prototype.upd = function() {
-        var sym = reels[0].getSym(this.xy[0]);
+        var sym = reels[0].getSym(this.xy[0]).tile;
         for (var i = 1; i < this.xy.length; i++) {
-            if (sym !== reels[i].getSym(this.xy[i])) {
+            if (sym !== reels[i].getSym(this.xy[i]).tile) {
                 sym = undefined;
                 break;
             }
         }
         var result = undefined !== sym;
         if (result) {
+            for (var i = 0; i < this.xy.length; i++) {
+                reels[i].getSym(this.xy[i]).flip = tick.ts;
+            }
             this.qDraw();
         }
         return result;
