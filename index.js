@@ -449,7 +449,7 @@
         }, ts, td);
     };
     Reel.prototype.spin = function(dt) {
-        var s = 0.02;
+        var s = 0.018;
         if (2000 <= dt) {
             if (undefined !== this.st) {
                 this.pos = Math.round(this.st - s * 1500) | 0;
@@ -496,7 +496,7 @@
         }
         return reels;
     };
-    var reels = Reel.init([7, 5, 3]);
+    var reels = Reel.init([7, 5, 4]);
 
     function Line(xy) {
         this.xy = xy;
@@ -571,7 +571,7 @@
     function coinFx(fb, tile, x, y, ts) {
         var fn = function(dt) {
             var dx = reels[reels.length >> 1].x + x * dt;
-            var dy = fb.cv.height - (tile.h << 1) + y * dt + 0.001 * dt * dt;
+            var dy = fb.cv.height - tile.h + y * dt + 0.0002 * dt * dt;
             fb.cx.drawImage(
                 sprite.sheet.main.img,
                 tile.x, tile.y, tile.w, tile.h,
@@ -582,7 +582,7 @@
     }
     coinFx.tile = [sprite.sheet.main.tile.coin, sprite.sheet.main.tile.star];
     coinFx.x = [-0.2, -0.1, 0, 0.1, 0.2];
-    coinFx.y = [-0.8, -0.9, -1, -1.1];
+    coinFx.y = [-0.3, -0.4, -0.5];
 
     function mainScn() {
         scn.fb2.clr();
