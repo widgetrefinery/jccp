@@ -711,6 +711,16 @@
     function ccp() {
         var sheet = sprite.sheet.main;
         var tile = sheet.tile.body;
+        var r = 0;
+        if (0 !== ccp._ast) {
+            r = (tick.ts - ccp._ats) % 300;
+            if (150 < r) {
+                r = 1 - (r - 150) / 150;
+            } else {
+                r = r / 150;
+            }
+            r *= Math.PI / 8;
+        }
         ccp._fb.cx.save();
         ccp._fb.cx.translate(ccp.x, ccp.y);
         ccp._fb.cx.drawImage(
@@ -719,17 +729,29 @@
             0, 0, tile.w, tile.h
         );
         tile = sheet.tile.armL;
+        ccp._fb.cx.save();
+        ccp._fb.cx.translate(tile.dx + tile.w, tile.dy);
+        if (0 !== ccp._ast) {
+            ccp._fb.cx.rotate(r);
+        }
         ccp._fb.cx.drawImage(
             sheet.img,
             tile.x, tile.y, tile.w, tile.h,
-            tile.dx, tile.dy, tile.w, tile.h
+            -tile.w, 0, tile.w, tile.h
         );
+        ccp._fb.cx.restore();
         tile = sheet.tile.armR;
+        ccp._fb.cx.save();
+        ccp._fb.cx.translate(tile.dx, tile.dy);
+        if (0 !== ccp._ast) {
+            ccp._fb.cx.rotate(-r);
+        }
         ccp._fb.cx.drawImage(
             sheet.img,
             tile.x, tile.y, tile.w, tile.h,
-            tile.dx, tile.dy, tile.w, tile.h
+            0, 0, tile.w, tile.h
         );
+        ccp._fb.cx.restore();
         tile = sheet.tile.neck;
         ccp._fb.cx.drawImage(
             sheet.img,
@@ -762,10 +784,19 @@
         if (0 !== ccp._st && tick.ts - ccp._ts > 1000) {
             ccp._st = 0;
         }
+        if (0 !== ccp._ast && tick.ts - ccp._ats > 600) {
+            ccp._ast = 0;
+        }
     }
     ccp.st = function(st) {
         ccp._st = st;
         ccp._ts = tick.ts;
+    };
+    ccp.ast = function(ast) {
+        if (0 === ccp._ast) {
+            ccp._ast = ast;
+            ccp._ats = tick.ts;
+        }
     };
     ccp.rst = function(fb, x, y, ts, td) {
         ccp._fb = fb;
@@ -775,6 +806,8 @@
         ccp.y = y;
         ccp._st = 0;
         ccp._ts = 0;
+        ccp._ast = 0;
+        ccp._ats = 0;
         q.add(function(dt) {
             ccp.x = ccp.x0 + ((ccp.x1 - ccp.x0) * dt / td) | 0;
         }, ts, td);
@@ -782,6 +815,9 @@
 
     function mainScn() {
         scn.fb2.clr();
+        if (0 !== mainScn.st && io.st.spin) {
+            ccp.ast(1);
+        }
         if (1 === mainScn.st) {
             if (io.st.spin) {
                 mainScn.st = 2;
