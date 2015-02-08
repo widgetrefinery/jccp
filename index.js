@@ -68,7 +68,11 @@
     };
 
     var lang = {
-        start: 'Tap to spin'
+        info: 'Tap to play.',
+        start: 'Waku waku',
+        win: 'Yay!',
+        bigWin: 'Unbeweevable!',
+        lose: 'Oh no!'
     };
 
     var sprite = {
@@ -819,6 +823,29 @@
         }, ts, td);
     };
 
+    function dlg() {
+        if (tick.ts < dlg.ts) {
+            return;
+        }
+        var len = (tick.ts - dlg.ts) / 400;
+        if (1 < len) {
+            len = 1;
+        }
+        len = (dlg._txt.length * len) | 0;
+        sprite.txtL(dlg.fb.cx, dlg.x, dlg.y, dlg._txt.substr(0, len));
+    }
+    dlg.txt = function(txt, ts) {
+        dlg._txt = txt;
+        dlg.ts = tick.ts + ts;
+    };
+    dlg.rst = function(fb, x, y) {
+        dlg.fb = fb;
+        dlg.x = x;
+        dlg.y = y;
+        dlg._txt = '';
+        dlg.ts = tick.ts;
+    };
+
     function mainScn() {
         scn.fb2.clr();
         if (0 !== mainScn.st && io.st.spin) {
@@ -826,6 +853,7 @@
         }
         if (1 === mainScn.st) {
             if (io.st.spin) {
+                dlg.txt(lang.start, 0);
                 mainScn.st = 2;
                 for (var i = 0; i < reels.length; i++) {
                     reels[i].qSpin(250 * i);
@@ -846,8 +874,10 @@
                 }
                 if (0 < pts) {
                     ccp.st(2);
+                    dlg.txt(5 > pts ? lang.win : lang.bigWin, 0);
                 } else {
                     ccp.st(1);
+                    dlg.txt(lang.lose, 0);
                 }
                 var ts = 0;
                 for (i = 0; i < pts; i++) {
@@ -874,13 +904,14 @@
             tile.x, tile.y, tile.w, tile.h,
             0, 0, scn.fb1.cv.width, scn.fb1.cv.height
         );
+        dlg.rst(scn.fb2, 24, 425);
+        dlg.txt(lang.info, 1000);
+        q.add(dlg, 0, 0);
         q.add(function(dt) {
-            var len = (lang.start.length * dt / 400) | 0;
-            sprite.txtL(scn.fb1.cx, 24, 425, lang.start.substr(0, len));
-            if (lang.start.length <= len + 1) {
+            if (0 === mainScn.st) {
                 mainScn.st = 1;
             }
-        }, 1000, 400);
+        }, 1400, 1);
         for (var i = 0; i < reels.length; i++) {
             reels[i].qFadeIn(200 + 200 * i, 400);
             reels[i].qDraw(scn.fb2, 0, 0);
