@@ -690,18 +690,18 @@
 
     function coinFx(fb, tile, x, y, ts) {
         var fn = function(dt) {
-            var dx = reels[reels.length >> 1].x + x * dt;
-            var dy = fb.cv.height - tile.h + y * dt + 0.0002 * dt * dt;
+            var dx = x * dt;
+            var dy = fb.cv.height - (tile.h << 1) + y * dt + 0.0002 * dt * dt;
             fb.cx.drawImage(
                 sprite.sheet.main.img,
                 tile.x, tile.y, tile.w, tile.h,
                 dx | 0, dy | 0, tile.w, tile.h
             );
         };
-        q.add(fn, ts, 1000);
+        q.add(fn, ts, 1500);
     }
     coinFx.tile = [sprite.sheet.main.tile.coin, sprite.sheet.main.tile.star];
-    coinFx.x = [-0.2, -0.1, 0, 0.1, 0.2];
+    coinFx.x = [0.2, 0.3, 0.4];
     coinFx.y = [-0.3, -0.4, -0.5];
 
     function ccp() {
