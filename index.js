@@ -427,8 +427,13 @@
             io.st.raw = e.which;
             db.log('kb=' + e.which);
         },
-        _ms: function(e){
+        _ms: function(e) {
             if (0 === e.button) {
+                io.st.spin = true;
+            }
+        },
+        _ts: function(e) {
+            if (0 < e.touches.length) {
                 io.st.spin = true;
             }
         },
@@ -438,7 +443,8 @@
         }
     };
     window.document.addEventListener('keydown', io._kb);
-    window.document.addEventListener('click', io._ms);
+    window.document.addEventListener('mousedown', io._ms);
+    window.document.addEventListener('touchstart', io._ts);
 
     function scn() {
         if (!scn.run) {
